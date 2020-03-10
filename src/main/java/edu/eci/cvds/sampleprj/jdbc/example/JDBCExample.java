@@ -57,8 +57,8 @@ public class JDBCExample {
             System.out.println("-----------------------");
 
 
-            int suCodigoECI=20134423;
-            registrarNuevoProducto(con, suCodigoECI, "SU NOMBRE", 99999999);
+            int suCodigoECI=2155180;
+            registrarNuevoProducto(con, suCodigoECI, "davor", 99999999);
             con.commit();
 
 
@@ -81,9 +81,16 @@ public class JDBCExample {
      */
     public static void registrarNuevoProducto(Connection con, int codigo, String nombre,int precio) throws SQLException{
         //Crear preparedStatement
-        //Asignar parámetros
-        //usar 'execute'
+        String sentencia = "insert into ORD_PRODUCTOS values(?, ?, ?);";
+        PreparedStatement ps = con.prepareStatement(sentencia);
 
+        //Asignar parámetros
+        ps.setInt(1, codigo);
+        ps.setString(2, nombre);
+        ps.setInt(3, precio);
+
+        //usar 'execute'
+        ps.execute();
 
         con.commit();
 
@@ -95,14 +102,25 @@ public class JDBCExample {
      * @param codigoPedido el código del pedido
      * @return
      */
-    public static List<String> nombresProductosPedido(Connection con, int codigoPedido){
+    public static List<String> nombresProductosPedido(Connection con, int codigoPedido) throws SQLException {
         List<String> np=new LinkedList<>();
 
         //Crear prepared statement
+        String consulta = "select p.nombre from ORD_PRODUCTOS as p, ORD_DETALLE_PEDIDO  as dp where dp.pedido_fk = ?  &  dp.producto_fk = p.codigo;";
+        PreparedStatement nombresProductos = con.prepareStatement(consulta);
+
         //asignar parámetros
+        nombresProductos.setInt(1, codigoPedido);
+
         //usar executeQuery
+        ResultSet respuesta = nombresProductos.executeQuery();
+
         //Sacar resultados del ResultSet
         //Llenar la lista y retornarla
+
+        while(respuesta.next()){
+            np.add(respuesta.getString(1));
+        }
 
         return np;
     }
@@ -114,14 +132,23 @@ public class JDBCExample {
      * @param codigoPedido código del pedido cuyo total se calculará
      * @return el costo total del pedido (suma de: cantidades*precios)
      */
-    public static int valorTotalPedido(Connection con, int codigoPedido){
+    public static int valorTotalPedido(Connection con, int codigoPedido) throws SQLException {
 
         //Crear prepared statement
-        //asignar parámetros
-        //usar executeQuery
-        //Sacar resultado del ResultSet
+        String consulta = "select sum(pd.cantidad * p.precio) " +
+                          "from ORD_PRODUCTOS as p, ORD_DETALLE_PEDIDO as pd " +
+                          "where pd.pedido_fk = ? & pd.producto_fk = p.codigo;";
+        PreparedStatement ps = con.prepareStatement(consulta);
 
-        return 0;
+        //asignar parámetros
+        ps.setInt(1, codigoPedido);
+
+        //usar executeQuery
+        ResultSet respuesta = ps.executeQuery();
+
+        //Sacar resultado del ResultSet
+        respuesta.next();
+        return respuesta.getInt(1);
     }
 
 
